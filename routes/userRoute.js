@@ -24,9 +24,6 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    if (typeof investmentCapacity !== 'number') {
-        return res.status(400).json({ message: 'Investment capacity must be a number.' });
-    }
 
     try {
         const userExists = await User.findOne({ email });
