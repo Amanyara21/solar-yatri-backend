@@ -38,28 +38,51 @@ router.post('/invest', userMiddleware, async (req, res) => {
 
 router.get('/user/orders', userMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).populate('investments.projectId');
-        
+        const user = await User.findById(req.user.id)
+            .populate({
+                path: 'investments.projectId',
+                select: 'projectName totalCapacity co2_saved_per_minute energy_production_per_minute energy_saving',
+                options: { lean: true }
+            });
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        // Check investments before mapping
+        console.log("User investments:", user.investments);
+
         const orders = user.investments.map(investment => {
             const project = investment.projectId;
-            console.log(project.totalCapacity, investment.investmentAmount);
-            const percentageShare = ((investment.investmentAmount / project.totalCapacity) * 100);
+
+            // Debugging statement for field check
+            console.log('Accessing project fields:', {
+                projectName: project.projectName,
+                co2_saved_per_minute: project.co2_saved_per_minute,
+                energy_production_per_minute: project.energy_production_per_minute,
+                energy_saving: project.energy_saving
+            });
+
+            const percentageShare = (investment.investmentAmount / project.totalCapacity) * 100;
             return {
                 companyName: project.projectName,
                 investedAmount: investment.investmentAmount,
                 percentageShare,
+                co2_saved_per_minute: project.co2_saved_per_minute,
+                energy_production_per_minute: project.energy_production_per_minute,
+                energy_saving: project.energy_saving
             };
         });
 
+        // Final debugging check before sending response
+        console.log("Final Orders Output:", orders);
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error });
     }
 });
+
+
 
 
 module.exports = router;
